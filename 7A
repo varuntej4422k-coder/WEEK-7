@@ -1,0 +1,485 @@
+```dart
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const RegistrationApp());
+}
+
+class RegistrationApp extends StatelessWidget {
+  const RegistrationApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Registration Form',
+      theme: ThemeData(
+        colorSchemeSeed: Colors.teal,
+        useMaterial3: true,
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      home: const RegistrationScreen(),
+    );
+  }
+}
+
+class RegistrationScreen extends StatefulWidget {
+  const RegistrationScreen({super.key});
+
+  @override
+  State<RegistrationScreen> createState() => _RegistrationScreenState();
+}
+
+class _RegistrationScreenState extends State<RegistrationScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _ageController = TextEditingController();
+
+  String? _gender;
+  DateTime? _dateOfBirth;
+
+  // Validate full name
+  String? validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your full name';
+    }
+
+    if (value.trim().length < 3) {
+      return 'Name must contain at least 3 characters';
+    }
+
+    return null;
+  }
+
+  // Validate email
+  String? validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your email';
+    }
+
+    final emailPattern =
+        RegExp(r'^[\w.+-]+@[\w-]+(\.[\w-]+)+$');
+
+    if (!emailPattern.hasMatch(value.trim())) {
+      return 'Please enter a valid email address';
+    }
+
+    return null;
+  }
+
+  // Validate password
+  String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password';
+    }
+
+    if (value.length < 6) {
+      return 'Password must contain at least 6 characters';
+    }
+
+    return null;
+  }
+
+  // Validate confirm password
+  String? validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please confirm your password';
+    }
+
+    if (value != _passwordController.text) {
+      return 'Passwords do not match';
+    }
+
+    return null;
+  }
+
+  // Validate phone number
+  String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your phone number';
+    }
+
+    if (!RegExp(r'^\d{10,}$').hasMatch(value)) {
+      return 'Enter at least 10 digits (numbers only)';
+    }
+
+    return null;
+  }
+
+  // Validate age
+  String? validateAge(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your age';
+    }
+
+    final age = int.tryParse(value.trim());
+
+    if (age == null || age < 1 || age > 120) {
+      return 'Age must be between 1 and 120';
+    }
+
+    return null;
+  }
+
+  // Select date of birth
+  Future<void> selectDate() async {
+    final today = DateUtils.dateOnly(DateTime.now());
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? today,
+      firstDate: DateTime(1900),
+      lastDate: today,
+      helpText: 'Select your date of birth',
+    );
+
+    if (pickedDate != null && mounted) {
+      setState(() {
+        _dateOfBirth = pickedDate;
+      });
+    }
+  }
+
+  // Submit form
+  void submitForm() {
+    FocusScope.of(context).unfocus();
+
+    final isValid = _formKey.currentState!.validate();
+
+    if (_gender == null || _dateOfBirth == null) {
+      setState(() {});
+
+      if (_gender == null && _dateOfBirth == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select gender and date of birth'),
+          ),
+        );
+      } else if (_gender == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select your gender')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select your date of birth'),
+          ),
+        );
+      }
+
+      return;
+    }
+
+    if (isValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Registration successful!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  // Reset form
+  void resetForm() {
+    _formKey.currentState?.reset();
+
+    _nameController.clear();
+    _emailController.clear();
+    _passwordController.clear();
+    _confirmPasswordController.clear();
+    _phoneController.clear();
+    _ageController.clear();
+
+    setState(() {
+      _gender = null;
+      _dateOfBirth = null;
+    });
+
+    FocusScope.of(context).unfocus();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Form has been reset')),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _phoneController.dispose();
+    _ageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Registration Form'),
+        centerTitle: true,
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+      ),
+
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+
+            child: Form(
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(
+                    Icons.person_add_alt_1,
+                    size: 65,
+                    color: Colors.teal,
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  const Text(
+                    'Create Your Account',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  // 1. Full Name
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Full Name',
+                      hintText: 'Enter your full name',
+                      prefixIcon: Icon(Icons.person),
+                    ),
+                    validator: validateName,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 2. Email
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      hintText: 'example@email.com',
+                      prefixIcon: Icon(Icons.email),
+                    ),
+                    validator: validateEmail,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 3. Password
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock),
+                    ),
+                    validator: validatePassword,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 4. Confirm Password
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Confirm Password',
+                      prefixIcon: Icon(Icons.lock_outline),
+                    ),
+                    validator: validateConfirmPassword,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 5. Phone Number
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone Number',
+                      hintText: 'Enter at least 10 digits',
+                      prefixIcon: Icon(Icons.phone),
+                    ),
+                    validator: validatePhone,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 6. Age
+                  TextFormField(
+                    controller: _ageController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Age',
+                      hintText: 'Enter your age',
+                      prefixIcon: Icon(Icons.cake),
+                    ),
+                    validator: validateAge,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 7. Gender Dropdown
+                  DropdownButtonFormField<String>(
+                    value: _gender,
+                    decoration: const InputDecoration(
+                      labelText: 'Gender',
+                      prefixIcon: Icon(Icons.people),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Male',
+                        child: Text('Male'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Female',
+                        child: Text('Female'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Other',
+                        child: Text('Other'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _gender = value;
+                      });
+                    },
+                  ),
+
+                  if (_gender == null)
+                    const SizedBox(height: 4),
+
+                  if (_gender == null)
+                    const Padding(
+                      padding: EdgeInsets.only(left: 12),
+                      child: Text(
+                        'Select your gender',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 16),
+
+                  // 8. Date of Birth
+                  FormField<DateTime>(
+                    validator: (_) {
+                      if (_dateOfBirth == null) {
+                        return 'Please select your date of birth';
+                      }
+                      return null;
+                    },
+                    builder: (field) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          InkWell(
+                            onTap: () async {
+                              await selectDate();
+                              field.didChange(_dateOfBirth);
+                            },
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: 'Date of Birth',
+                                prefixIcon: const Icon(
+                                  Icons.calendar_today,
+                                ),
+                                errorText: field.errorText,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                _dateOfBirth == null
+                                    ? 'Select your date of birth'
+                                    : '${_dateOfBirth!.day.toString().padLeft(2, '0')}/'
+                                      '${_dateOfBirth!.month.toString().padLeft(2, '0')}/'
+                                      '${_dateOfBirth!.year}',
+                                style: TextStyle(
+                                  color: _dateOfBirth == null
+                                      ? Colors.grey
+                                      : Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // Submit Button
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: submitForm,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text(
+                        'Submit Registration',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Reset Button
+                  SizedBox(
+                    height: 50,
+                    child: OutlinedButton(
+                      onPressed: resetForm,
+                      child: const Text(
+                        'Reset Form',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
